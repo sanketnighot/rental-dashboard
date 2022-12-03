@@ -1,24 +1,42 @@
-import logo from './logo.svg';
-import './App.css';
+import * as React from 'react';
+import {Home} from './Components/Home'
+import {
+  chain,
+  WagmiConfig,
+  createClient,
+  defaultChains,
+  configureChains,
+} from 'wagmi'
+import { publicProvider } from 'wagmi/providers/public'
+import { MetaMaskConnector } from 'wagmi/connectors/metaMask'
+import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
+import {Buffer} from 'buffer';
+Buffer.from('anything','base64');
+// Configure chains & providers with the Alchemy provider.
+// Two popular providers are Alchemy (alchemy.com) and Infura (infura.io)
+const { chains, provider, webSocketProvider } = configureChains([chain.polygonMumbai], [
+  publicProvider(),
+])
+// Set up client
+const client = createClient({
+  autoConnect: true,
+  connectors: [
+    new MetaMaskConnector({ chains })
+    
+  ],
+  provider,
+  webSocketProvider,
+})
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <WagmiConfig client={client}>
+        <Home/>
+      </WagmiConfig>
+      
+    </>
   );
 }
 
