@@ -1040,13 +1040,21 @@ export const lord_abi = [
 	},
 	{
 		"inputs": [],
-		"name": "ApproveToCaller",
+		"name": "BalanceQueryForZeroAddress",
 		"type": "error"
 	},
 	{
-		"inputs": [],
-		"name": "BalanceQueryForZeroAddress",
-		"type": "error"
+		"inputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "_tokenId",
+				"type": "uint256[]"
+			}
+		],
+		"name": "burn",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"inputs": [
@@ -1216,20 +1224,7 @@ export const lord_abi = [
 		],
 		"name": "approve",
 		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256[]",
-				"name": "_tokenId",
-				"type": "uint256[]"
-			}
-		],
-		"name": "burn",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -1456,7 +1451,7 @@ export const lord_abi = [
 		],
 		"name": "safeTransferFrom",
 		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -1484,7 +1479,7 @@ export const lord_abi = [
 		],
 		"name": "safeTransferFrom",
 		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -1641,7 +1636,7 @@ export const lord_abi = [
 		],
 		"name": "transferFrom",
 		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{

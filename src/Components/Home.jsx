@@ -5,13 +5,15 @@ import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
 import {Button, Typography} from '@mui/material';
-import TextField from '@mui/material/TextField';
 import {  useAccount, useContract, useSigner, useNetwork, useConnect, useDisconnect, useSwitchNetwork } from 'wagmi'
 import { rental_abi, land_abi, lord_abi } from "../Contracts/abi";
 import Logo from '../Images/logo.png'
 import Land from '../Images/land.png'
 import Lord from '../Images/lord.jpg'
 import Stack from '@mui/material/Stack';
+import {getNFTs} from './Data'
+import {useSnackbar } from 'notistack';
+
 
 const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode !== 'dark' ? '#1A2027' : '#fff',
@@ -21,13 +23,19 @@ const Item = styled(Paper)(({ theme }) => ({
     color: theme.palette.text.secondary,
   }));
 
-const landContractAddress = "0x994dDB18BeD59E0e6793714451197025F7382a23";
-const lordContractAddress = "0xAAB842eD82b9b1bB42AAbE4F3589CA3Be45f5cA7";
-const rentalContractAddress = "0x4C64b2b2295f538d64464e304d196f99BbFf7cf5";
+export const landContractAddress = "0x379fecacf8c2a3c4b5787450217bba6865fde7fd";
+export const lordContractAddress = "0xbc5c3770e76182848b2edd5ea1e74f2ce64077ee";
+export const rentalContractAddress = "0x2c5dD32117E5dF2e2eBA434c16D404E3a2865849";
 
 export const Home = () => {
-    const [land, setLand] = useState('');
+    const [land, setLand] = useState([]);
     const [lord, setLord] = useState('');
+    const [landcategory, setLandCategory] = useState([]);
+    const [lordcategory, setLordCategory] = useState('');
+    const [ownland, setOwnLand] = useState([]);
+    const [ownlord, setOwnLord] = useState([]);    
+    const [ownlandcategory, setOwnLandcategory] = useState([]);
+    const [ownlordcategory, setOwnLordcategory] = useState([]);    
     const [landApproved, setLandApproved] = useState(false);
     const [lordApproved, setLordApproved] = useState(false);
     const [reward, setReward] = useState(0);
@@ -41,24 +49,14 @@ export const Home = () => {
     const { chain } = useNetwork();
     const { chains, switchNetwork } = useSwitchNetwork();
     const { disconnect } = useDisconnect();
-    var lalodatas = [
-      {
-        landId: 1,
-        lordId: 1
-      },
-      {
-        landId: 2,
-        lordId: 2
-      },
-      {
-        landId: 3,
-        lordId: 3
-      },
-      {
-        landId: 4,
-        lordId: 4
-      },
-    ]
+    const { enqueueSnackbar } = useSnackbar();
+
+    const handleSnackbar = (variant, msg) => () => {
+      // variant could be success, error, warning, info, or default
+      enqueueSnackbar(msg, { variant });
+    };
+
+
     const connectWalletButton = () => {
       return (
         <>
@@ -106,13 +104,28 @@ export const Home = () => {
       );
     };
 
-    const handleLandChange = (event) => {
-      setLand(parseInt(event.target.value));
-      
+    const handleLandChange = (id) => {
+      var l = [...land]
+      var lc = [...landcategory]
+      if (lord === '') {
+        alert('Please select lord first');
+      } else if (!l.includes(id) && lord%3 + 1 <= l.length || lord%3 + 2 <= l.length || lord%3 + 3 <= l.length) {
+        alert('You have selected Maximum number of Lands')
+      } else if (l.includes(id)) {
+        l.splice(l.indexOf(id), 1);
+        lc.splice(l.indexOf(id))
+      } else {
+        l.push(id)
+        lc.push(ownlandcategory[l.indexOf(id)])
+      }
+      setLand(l);
+      setLandCategory(lc);
     };
 
-    const handleLordChange = (event) => {
-      setLord(parseInt(event.target.value));
+    const handleLordChange = (id) => {
+      setLord(id);
+      setLordCategory(ownlordcategory[ownlord.indexOf(id)])
+      setLand([]);
     };
 
     const landContract = useContract({
@@ -138,8 +151,10 @@ export const Home = () => {
         return console.log(err)})
       await approve.wait(1).then(()=>{
         setLandApproved(true);
+        alert( "Lands Approved")
       }).catch((err)=>{
         return console.log(err)})
+        alert( "An Error Occured, Please Try Again")
     }
 
     const approveLord = async () => {
@@ -147,13 +162,22 @@ export const Home = () => {
         return console.log(err)})
       await approve.wait(1).then(()=>{
         setLordApproved(true);
+        alert( "Lords Approved")
       }).catch((err)=>{
         return console.log(err)})
+        alert( "An Error Occured, Please Try Again")
     }
 
     const handleStake = async () => {
-      if (land != '' && lord != '') {
-        let owner = await rentalContract.depositLandLords([land], lord, [1], 1).catch((err)=>{
+      console.log(land)
+      console.log(landcategory)
+      console.log(lord)
+      console.log(lordcategory)
+      if (land.length !== 0 && lord !== '') {
+        let owner = await rentalContract.depositLandLords(land, lord, landcategory, lordcategory).then(()=>{
+          alert( "LandLords Staked")
+        }).catch((err)=>{
+          alert( "An Error Occured, Please Try Again")
           return console.log(err)
         })
       } else {
@@ -162,13 +186,21 @@ export const Home = () => {
     }
 
     const handleUnstake = async (id) => {
-        let owner = await rentalContract.withdrawLandLords(id).catch((err)=>{
+      console.log(id)
+        let owner = await rentalContract.withdrawLandLords(id).then(()=>{
+          alert( "LandLords Staked")
+        }).catch((err)=>{
+          alert("An Error Occured, Please Try Again")
           return console.log(err)
         })
+        
     }
 
     const handleClaimRewards = async (id) => {
-        let owner = await rentalContract.claimRewards(id).catch((err)=>{
+        let owner = await rentalContract.claimRewards(id).then(()=>{
+          alert( "Rewards Claimed")         
+        }).catch((err)=>{
+          alert( "An Error Occured, Please Try Again")
           return console.log(err)
         })
     }
@@ -176,7 +208,7 @@ export const Home = () => {
     useEffect(() => {
       if (!isConnected) return;
       if (chains.find((x) => x.id === chain?.id) > 0) return;
-      switchNetwork && switchNetwork(80001);
+      switchNetwork && switchNetwork(5);
     }, [chain?.id, chains, isConnected, switchNetwork]);
 
     useEffect(()=> {
@@ -188,8 +220,6 @@ export const Home = () => {
           const lordApproval = await lordContract.isApprovedForAll(address, rentalContractAddress).catch((err)=>{
             return console.log(err)})
           setLordApproved(lordApproval)
-        }
-
         const rewardIdInfo = await rentalContract.getUserRewardId(address).catch((err)=>{
           return console.log(err)
         })
@@ -202,25 +232,19 @@ export const Home = () => {
           if(landLord.some(ll => ll.lordId !== lld.lordId)){
             return
           } else{
-            let asd = Object.assign({selected: false}, lld);            
-            asd.rewardId = ll
-            lalo.push(asd)
-          }
-        })
-        setLandLord(lalo)
-        // if (Number(rewardIdInfo) > 0) {
-          
-        //   const landLordInfo = await rentalContract.getLandLordsInfo(Number(rewardIdInfo[0])).catch((err)=>{
-        //     return console.log(err)
-        //   })
-        //   setLandLord(landLordInfo)
-        //   const rewardInfo = await rentalContract.getcalculateRewards(5).catch((err)=>{
-        //     return console.log(err)
-        //   })
-        //   setReward(rewardInfo[0])
-        // }
-        
-        }, 5000);
+              let asd = Object.assign({selected: false}, lld);            
+              asd.rewardId = ll
+              lalo.push(asd)
+            }
+          })
+          setLandLord(lalo)
+          const ownedNft = await getNFTs(address);
+          setOwnLand(ownedNft[0]);
+          setOwnLord(ownedNft[2]);
+          setOwnLandcategory(ownedNft[1]);
+          setOwnLordcategory(ownedNft[3]);
+        }
+      }, 5000);
       return () => clearInterval(interval);}
     );
 
@@ -250,7 +274,7 @@ export const Home = () => {
     return (
       <Container>
           <Box sx={{ flexGrow: 1 }} style={{height: '100vh', overflow: 'scroll'}}>
-            <Grid container spacing={2} direction="row" justifyContent="center" alignItems="center">
+            <Grid container spacing={2} direction="row" justifyContent="center" alignItems="flex-start">
               <Grid item sm={10} style={{marginTop: '1%'}}>
                 <Item style={{backgroundColor:"#041E2F", color:"#ffffff"}}>
                     <img alt="" src={Logo} style={{width:'30%', marginTop: '1%'}}/>
@@ -267,62 +291,33 @@ export const Home = () => {
                   <br/>
                 </Item> 
               </Grid>: <></>}
-              {/* <Grid item sm={6}>
-                  <Item>
-                      <h2>Lords You Own</h2>
-                      <Box sx={{ minWidth: 120 }} style={{ marginTop : '1%'}}>
-                          <FormControl fullWidth>
-                              <InputLabel id="Select Lord">Select Lord</InputLabel>
-                              <Select
-                              labelId="demo-simple-select-label"
-                              id="demo-simple-select"
-                              value={lord}
-                              label="Lord"
-                              onChange={handleLordChange}
-                              >
-                              <MenuItem value={"Lord 1"}>Lord 1</MenuItem>
-                              <MenuItem value={"Lord 2"}>Lord 2</MenuItem>
-                              <MenuItem value={"Lord 3"}>Lord 3</MenuItem>
-                              </Select>
-                          </FormControl>
-                      </Box>
-                      <Button variant="text">Mint New Lord</Button>
-                  </Item>
-              </Grid>
-              <Grid item sm={6}>
-                  <Item>
-                      <h2>Lands You Own</h2>
-                      <Box sx={{ minWidth: 120 }} style={{ marginTop : '1%'}}>
-                          <FormControl fullWidth>
-                              <InputLabel id="Select Land">Select Land</InputLabel>
-                              <Select
-                              labelId="demo-simple-select-label"
-                              id="demo-simple-select"
-                              value={land}
-                              label="Land"
-                              onChange={handleLandChange}
-                              >
-                              <MenuItem value={"Land 1"}>Land 1</MenuItem>
-                              <MenuItem value={"Land 2"}>Land 2</MenuItem>
-                              <MenuItem value={"Land 3"}>Land 3</MenuItem>
-                              </Select>
-                          </FormControl>
-                      </Box>
-                      <Button variant="text">Mint New Land</Button>
-                  </Item>
-                  
-              </Grid> */}
               <Grid item sm={5}>
-                  <Item style={{backgroundColor:"#041E2F"}}>
-                    <img alt="" src={Lord} style={{width:'20%', marginTop: '1%'}}/>
-                    <TextField fullWidth sx={{ input: { color: 'white' } }} variant="standard" InputLabelProps={{style: { color: '#fff' }}} type="number" style={{margin:'1%', color: 'white'}} size="small" label={'Enter Lord Id'} id="Reward" value={lord} onChange={(event)=>{handleLordChange(event)}}/> <br/>
-                  </Item>
+                <Item style={{backgroundColor:"#041E2F"}}>
+                  <img alt="" src={Lord} style={{width:'20%', marginTop: '1%'}}/><br/>
+                  {ownlord.map((item, index)=>{
+                    if (lord === item) {
+                      return <h2 style={{margin:'2%', padding:'1%', color:'#fff', border:'1px solid', cursor: 'pointer'}} key={index} onClick={()=>{handleLordChange(item)}}>Lord #{item} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Category #{item%3 + 1}</h2>
+                    } else {
+                      return <h2 style={{margin:'2%', padding:'1%', color:'#fff', cursor: 'pointer'}} key={index} onClick={()=>{handleLordChange(item)}}>Lord #{item} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Category #{item%3 + 1}</h2>
+                    }
+
+                    })
+                  }
+                </Item>
               </Grid>
 
               <Grid item sm={5}>
                   <Item style={{backgroundColor:"#041E2F"}}>
                     <img alt="" src={Land} style={{width:'20%', marginTop: '1%'}}/>
-                    <TextField fullWidth sx={{ input: { color: 'white' } }} variant="standard" InputLabelProps={{style: { color: '#fff' }}} type="number" style={{margin:'1%', color: 'white'}} size="small" label={'Enter Land Id'} id="Reward" value={land} onChange={(event)=>{handleLandChange(event)}}/><br/>
+                    {ownland.map((item, index)=>{
+                      if (land.includes(item)) {
+                        return <h2 style={{margin:'2%', padding:'1%', color:'#fff', border:'1px solid', cursor: 'pointer'}} key={index} onClick={()=>{handleLandChange(item)}}>Land #{item} </h2>
+                      } else {
+                        return <h2 style={{margin:'2%', padding:'1%', color:'#fff', cursor: 'pointer'}} key={index} onClick={()=>{handleLandChange(item)}}>Land #{item} </h2>
+                      }
+                        
+                      })
+                    }
                   </Item>
               </Grid> <br/>
 
@@ -335,40 +330,10 @@ export const Home = () => {
                     }}>Stake</Button> : <Button color="success" fullWidth variant="contained" onClick={()=>{handleStake();}}>Stake</Button>}
                   </div>
               </Grid><br/>           
-              {/* {(landLord === []) ?  <Grid item sm={10}><br/><p style={{backgroundColor:'white', color:'red'}}>No LandLords Staked</p></Grid> 
-              : landLord.map((item, index) => {
-                 <LandLordComp item={item} key={index}/>
-              })}  */}
               
               {landLord.map((item, index) => {
                 return <LandLordComp item={item} key={index}/>
               })}
-
-              {/* <Grid item sm={10}>
-                  <Item style={{backgroundColor:"#041E2F", color:"#ffffff"}}>
-                      <h1>Staking Dashboard</h1>
-                      <h2>Items Staked</h2>
-                      {((landLord === '') ? <>
-                        <p>None</p>
-                      </> : <>
-                        {rewardId.map(async (item)=>{
-                          const landlord = await getLandlord(1);
-                          return (
-                            <>LandId {Number(landlord.landId)}, LordId: {Number(landlord.lordId)}
-                            <Button style={{marginLeft:'1%'}} variant="contained" color="error" onClick={()=>{handleUnstake()}}>Unstake</Button></>
-                          )
-                        })}
-                        
-                      </>)}
-                      <h2>Claimable Rewards</h2>
-                      <TextField size="small" disabled InputLabelProps={{style: { color: 'lightGrey' }}} label={(Number(reward)) + ' WEI'} id="Reward" />
-                      {((landLord[8] === false) ? <>
-                      <Button style={{marginLeft:'1%'}} variant="contained" disabled color="success">Claim Reward</Button>
-                      </> : <>
-                        <Button style={{marginLeft:'1%'}} variant="contained" color="success" onClick={()=>{handleClaimRewards()}}>Claim Reward</Button>
-                      </>)}
-                  </Item>
-              </Grid> */}
             </Grid>
           </Box>
         </Container>
