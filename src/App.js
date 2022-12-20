@@ -24,8 +24,7 @@ const { chains, provider, webSocketProvider } = configureChains([chain.goerli], 
 const client = createClient({
   autoConnect: true,
   connectors: [
-    new MetaMaskConnector({ chains })
-    
+    new MetaMaskConnector({ chains })   
   ],
   provider,
   webSocketProvider,

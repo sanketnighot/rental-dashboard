@@ -21,14 +21,13 @@ export const getNFTs = async (address) => {
     const contractAdd = allNfts[nft].contract.address
     // console.log(contractAdd)
     if (contractAdd === landContractAddress) {
-      
-        lands.push(parseInt(allNfts[nft].tokenId))
-        landsCategory.push((parseInt(allNfts[nft].tokenId))%3 +1)
+        // console.log(allNfts[nft])
+        lands.push(allNfts[nft])
     } else if (contractAdd === lordContractAddress) {
-        lords.push(parseInt(allNfts[nft].tokenId))
-        lordsCategory.push((parseInt(allNfts[nft].tokenId))%3 +1)
+        // console.log(allNfts[nft])
+        lords.push(allNfts[nft])
     }
   }
-  // console.log([lands,landsCategory,lords,lordsCategory]) 
-  return [lands,landsCategory,lords,lordsCategory]
+  // console.log([lands,lords]) 
+  return [lands,lords]
 };

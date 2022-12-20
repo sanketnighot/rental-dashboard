@@ -5,14 +5,13 @@ import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
 import {Button, Typography} from '@mui/material';
-import {  useAccount, useContract, useSigner, useNetwork, useConnect, useDisconnect, useSwitchNetwork } from 'wagmi'
+import { useAccount, useContract, useSigner, useNetwork, useConnect, useDisconnect, useSwitchNetwork } from 'wagmi'
 import { rental_abi, land_abi, lord_abi } from "../Contracts/abi";
 import Logo from '../Images/logo.png'
 import Land from '../Images/land.png'
 import Lord from '../Images/lord.jpg'
 import Stack from '@mui/material/Stack';
 import {getNFTs} from './Data'
-import {useSnackbar } from 'notistack';
 
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -23,9 +22,9 @@ const Item = styled(Paper)(({ theme }) => ({
     color: theme.palette.text.secondary,
   }));
 
-export const landContractAddress = "0x379fecacf8c2a3c4b5787450217bba6865fde7fd";
-export const lordContractAddress = "0xbc5c3770e76182848b2edd5ea1e74f2ce64077ee";
-export const rentalContractAddress = "0x2c5dD32117E5dF2e2eBA434c16D404E3a2865849";
+export const landContractAddress = "0x386b362d28a417ef173759be763812c02f7d3d30";
+export const lordContractAddress = "0x3373d30f1338467bf1f68b480de77d07c34c82f3";
+export const rentalContractAddress = "0xA2470F90Ab041b19C4aEe66083de3Dd67173A6F6";
 
 export const Home = () => {
     const [land, setLand] = useState([]);
@@ -49,13 +48,6 @@ export const Home = () => {
     const { chain } = useNetwork();
     const { chains, switchNetwork } = useSwitchNetwork();
     const { disconnect } = useDisconnect();
-    const { enqueueSnackbar } = useSnackbar();
-
-    const handleSnackbar = (variant, msg) => () => {
-      // variant could be success, error, warning, info, or default
-      enqueueSnackbar(msg, { variant });
-    };
-
 
     const connectWalletButton = () => {
       return (
@@ -104,28 +96,42 @@ export const Home = () => {
       );
     };
 
-    const handleLandChange = (id) => {
+    const handleLandChange = (id, category) => {
       var l = [...land]
       var lc = [...landcategory]
       if (lord === '') {
         alert('Please select lord first');
-      } else if (!l.includes(id) && lord%3 + 1 <= l.length || lord%3 + 2 <= l.length || lord%3 + 3 <= l.length) {
+      } else if ((lordcategory <= l.length || lordcategory <= l.length || lordcategory <= l.length) && !l.includes(id)) {
         alert('You have selected Maximum number of Lands')
       } else if (l.includes(id)) {
-        l.splice(l.indexOf(id), 1);
-        lc.splice(l.indexOf(id))
+        const indexL = l.indexOf(id)
+        l.splice(indexL, 1);
+        lc.splice(indexL, 1)
       } else {
         l.push(id)
-        lc.push(ownlandcategory[l.indexOf(id)])
+        if (category === "BASIC") {
+          lc.push(1)
+        } else if (category === "PLATINUM") {
+          lc.push(2)
+        } else if (category === "PRIME") {
+          lc.push(3)
+        } 
       }
       setLand(l);
       setLandCategory(lc);
     };
 
-    const handleLordChange = (id) => {
+    const handleLordChange = (id, category) => {
       setLord(id);
-      setLordCategory(ownlordcategory[ownlord.indexOf(id)])
+      if (category === "COMMON") {
+        setLordCategory(1)
+      } else if (category === "RARE") {
+        setLordCategory(2)
+      } else if (category === "MOST RARE") {
+        setLordCategory(3)
+      } 
       setLand([]);
+      setLandCategory([]);
     };
 
     const landContract = useContract({
@@ -169,10 +175,6 @@ export const Home = () => {
     }
 
     const handleStake = async () => {
-      console.log(land)
-      console.log(landcategory)
-      console.log(lord)
-      console.log(lordcategory)
       if (land.length !== 0 && lord !== '') {
         let owner = await rentalContract.depositLandLords(land, lord, landcategory, lordcategory).then(()=>{
           alert( "LandLords Staked")
@@ -186,7 +188,6 @@ export const Home = () => {
     }
 
     const handleUnstake = async (id) => {
-      console.log(id)
         let owner = await rentalContract.withdrawLandLords(id).then(()=>{
           alert( "LandLords Staked")
         }).catch((err)=>{
@@ -229,29 +230,34 @@ export const Home = () => {
           var lld = await rentalContract.getLandLordsInfo(ll).catch((err)=>{
                 return console.log(err)
               })
+          var claimRwd = await rentalContract.getcalculateRewards(ll).catch((err)=>{
+                return console.log(err)
+              })
+          
           if(landLord.some(ll => ll.lordId !== lld.lordId)){
             return
           } else{
-              let asd = Object.assign({selected: false}, lld);            
+              let asd = Object.assign({selected: false}, lld);
               asd.rewardId = ll
+              asd.claimRwd = (Number(claimRwd[0])/1000000000000000000).toFixed(18)
               lalo.push(asd)
+              
             }
           })
           setLandLord(lalo)
           const ownedNft = await getNFTs(address);
           setOwnLand(ownedNft[0]);
-          setOwnLord(ownedNft[2]);
-          setOwnLandcategory(ownedNft[1]);
-          setOwnLordcategory(ownedNft[3]);
-        }
+          setOwnLord(ownedNft[1]);
+          }
       }, 5000);
       return () => clearInterval(interval);}
     );
 
     const LandLordComp = (props) => {
       return(
-        <Grid item sm={10} key = {(props.item.lordId).toString()}>
+        <Grid item sm={10} key = {(props.item.lordId).toString()} style={{marginBottom:"2%"}}>
           <Item style={{backgroundColor:"#041E2F", color:"#ffffff"}}>
+          <h2>LandLord #{props.item.rewardId}</h2>
             <Stack direction="row" justifyContent="space-around" alignItems="center" spacing={0.5}>
               <div style={{backgroundColor:"transparent", color:"white"}}>
                 <b>Lord ID</b><br/>
@@ -259,11 +265,11 @@ export const Home = () => {
               </div>
               <div style={{backgroundColor:"transparent", color:"white"}}>
                 <b>Land ID</b><br/>
-                {Number(props.item.landId[0])}
+                {(props.item.landId).join()}
               </div>
               <div style={{backgroundColor:"transparent", color:"white"}}>
                 <Button style={{margin:"1%"}} color="error" fullWidth variant="contained" onClick={()=>{handleUnstake(props.item.rewardId)}}>UnStake</Button>
-                <Button style={{margin:"1%"}} color="success" fullWidth variant="contained" onClick={()=>{handleClaimRewards(props.item.rewardId)}}>Claim Reward</Button>
+                <Button style={{margin:"1%"}} color="success" fullWidth variant="contained" onClick={()=>{handleClaimRewards(props.item.rewardId)}}>Claim {(props.item.claimRwd)} ETH</Button>
               </div>
             </Stack>
           </Item>
@@ -295,10 +301,10 @@ export const Home = () => {
                 <Item style={{backgroundColor:"#041E2F"}}>
                   <img alt="" src={Lord} style={{width:'20%', marginTop: '1%'}}/><br/>
                   {ownlord.map((item, index)=>{
-                    if (lord === item) {
-                      return <h2 style={{margin:'2%', padding:'1%', color:'#fff', border:'1px solid', cursor: 'pointer'}} key={index} onClick={()=>{handleLordChange(item)}}>Lord #{item} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Category #{item%3 + 1}</h2>
+                    if (lord === parseInt(item.tokenId)) {
+                      return <h2 style={{margin:'2%', padding:'1%', color:'lightGreen', border:'1px solid', cursor: 'pointer', textAlign:"left"}} key={index} onClick={()=>{handleLordChange(parseInt(item.tokenId), item.rawMetadata.attributes[6].value)}}>Lord #{parseInt(item.tokenId)} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;{item.rawMetadata.attributes[6].value}</h2>
                     } else {
-                      return <h2 style={{margin:'2%', padding:'1%', color:'#fff', cursor: 'pointer'}} key={index} onClick={()=>{handleLordChange(item)}}>Lord #{item} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Category #{item%3 + 1}</h2>
+                      return <h2 style={{margin:'2%', padding:'1%', color:'#fff', cursor: 'pointer', textAlign:"left"}} key={index} onClick={()=>{handleLordChange(parseInt(item.tokenId), item.rawMetadata.attributes[6].value)}}>Lord #{parseInt(item.tokenId)} &nbsp; &nbsp; &nbsp;{item.rawMetadata.attributes[6].value}</h2>
                     }
 
                     })
@@ -310,10 +316,10 @@ export const Home = () => {
                   <Item style={{backgroundColor:"#041E2F"}}>
                     <img alt="" src={Land} style={{width:'20%', marginTop: '1%'}}/>
                     {ownland.map((item, index)=>{
-                      if (land.includes(item)) {
-                        return <h2 style={{margin:'2%', padding:'1%', color:'#fff', border:'1px solid', cursor: 'pointer'}} key={index} onClick={()=>{handleLandChange(item)}}>Land #{item} </h2>
+                      if (land.includes(parseInt(item.tokenId))) {
+                        return <h2 style={{margin:'2%', padding:'1%', color:'lightGreen', border:'1px solid', cursor: 'pointer', textAlign:"left"}} key={index} onClick={()=>{handleLandChange(parseInt(item.tokenId), (item.rawMetadata.attributes[0].value).toUpperCase())}}>Land #{item.tokenId} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;{(item.rawMetadata.attributes[0].value).toUpperCase()}</h2>
                       } else {
-                        return <h2 style={{margin:'2%', padding:'1%', color:'#fff', cursor: 'pointer'}} key={index} onClick={()=>{handleLandChange(item)}}>Land #{item} </h2>
+                        return <h2 style={{margin:'2%', padding:'1%', color:'#fff', cursor: 'pointer', textAlign:"left"}} key={index} onClick={()=>{handleLandChange(parseInt(item.tokenId), (item.rawMetadata.attributes[0].value).toUpperCase())}}>Land #{item.tokenId} &nbsp; &nbsp; &nbsp;{(item.rawMetadata.attributes[0].value).toUpperCase()}</h2>
                       }
                         
                       })
